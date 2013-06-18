@@ -1,0 +1,45 @@
+{
+  "name": "katt-js",
+  "description": "KATT (Klarna API Testing Tool) is an HTTP-based API testing tool for NodeJS",
+  "keywords": [
+    "katt",
+    "http",
+    "server",
+    "blueprint",
+    "mock",
+    "test"
+  ],
+  "version": "0.0.1",
+  "author": "Klarna AB",
+  "contributors": [
+    "Andrei Necualu <@andreineculau>",
+    "Isak Bakken <isak@klarna.com>"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "gitosis@git.internal.machines:katt-js.git"
+  },
+  "licenses": [
+    {
+      "type": "Apache-2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    }
+  ],
+  "scripts": {
+    "prepublish": "make prepublish",
+    "test": "make test"
+  },
+  "dependencies": {
+    "katt-blueprint-parser": "~1.0.3",
+    "lodash": "~1.3.1"
+  },
+  "devDependencies": {
+    "chai": "~1.7.0",
+    "coffee-script": "~1.6.3",
+    "coffeelint": "~0.5.6",
+    "growl": "~1.7.0",
+    "lodash": "~1.3.1",
+    "mocha": "~1.11.0",
+    "testem": "~0.2.98"
+  }
+}
