@@ -38,8 +38,8 @@ exports.normalizeHeaders = (headers) ->
   result
 
 
-exports.normalizeUrl = (URL, vars = {}) ->
-  result = url.parse URL
+exports.normalizeUrl = (Url, vars = {}) ->
+  result = url.parse Url
   result.port ?= exports.defaultPort[result.protocol]
   sameHostname = (result.hostname is vars.hostname)
   samePort = not vars.port or (result.port is vars.port.toString())
@@ -52,7 +52,7 @@ exports.normalizeUrl = (URL, vars = {}) ->
     result = url.format result
     result
   else
-    URL
+    Url
 
 
 exports.parseHost = (host) ->
