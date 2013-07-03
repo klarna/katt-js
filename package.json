@@ -10,11 +10,6 @@
     "test"
   ],
   "version": "0.0.1",
-  "author": "Klarna AB",
-  "contributors": [
-    "Andrei Necualu <@andreineculau>",
-    "Isak Bakken <isak@klarna.com>"
-  ],
   "repository": {
     "type": "git",
     "url": "gitosis@git.internal.machines:katt-js.git"
