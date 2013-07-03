@@ -20,44 +20,6 @@ blueprintParser = require 'katt-blueprint-parser'
 utils = exports.utils = require './utils'
 Const = exports.Const = require './const'
 
-TAGS =
-  MATCH_ANY: '{{_}}'
-  RECALL_BEGIN: '{{<'
-  RECALL_END: '}}'
-  STORE_BEGIN: '{{>'
-  STORE_END: '}}'
-  MARKER_BEGIN: '{'
-  MARKER_END: '}'
-TAGS_RE = do () ->
-  result = {}
-  result[tagName] = utils.regexEscape tag  for tagName, tag of TAGS
-  result
-
-###
-recallRE = ///
-  ^#{TAGS_RE.RECALL_BEGIN}
-  [^#{TAGS_RE.MARKER_END}]+
-  #{TAGS_RE.RECALL_END}$
-///
-###
-
-storeRE = ///
-  ^#{TAGS_RE.STORE_BEGIN}
-  [^#{TAGS_RE.MARKER_END}]+
-  #{TAGS_RE.STORE_END}$
-///
-
-###
-subRE = ///
-  ^#{TAGS_RE.SUBE_BEGIN}
-  [^#{TAGS_RE.MARKER_END}]+
-  #{TAGS_RE.SUBE_END}$
-///
-###
-
-matchAnyRE = ///
-  #{TAGS_RE.MATCH_ANY}
-///
 
 #
 # API
@@ -136,8 +98,8 @@ exports.store = (actualValue, expectedValue, vars = {}) ->
   return vars  unless _.isString expectedValue
   return vars  if matchAnyRE.test expectedValue
   return vars  unless storeRE.test expectedValue
-  expectedValue = expectedValue.replace TAGS.STORE_BEGIN, ''
-  expectedValue = expectedValue.replace TAGS.STORE_END, ''
+  expectedValue = expectedValue.replace Const.TAGS.STORE_BEGIN, ''
+  expectedValue = expectedValue.replace Const.TAGS.STORE_END, ''
   vars[expectedValue] = actualValue
 
 
@@ -159,7 +121,7 @@ exports.recall = (expectedValue, vars = {}) ->
   return expectedValue  unless _.isString expectedValue
   for key, value of vars
     keyRE = utils.regexEscape key
-    keyRE = new RegExp "#{TAGS_RE.RECALL_BEGIN}#{keyRE}#{TAGS_RE.RECALL_END}", 'g'
+    keyRE = new RegExp "#{Const.TAGS_RE.RECALL_BEGIN}#{keyRE}#{Const.TAGS_RE.RECALL_END}", 'g'
     expectedValue = expectedValue.replace keyRE, value
   expectedValue
 
@@ -179,6 +141,30 @@ exports.recallDeep = (expectedValue, vars = {}) ->
 
 
 # RUN
+exports.readScenario = (scenario) ->
+  blueprint = blueprintParser.parse fs.readFileSync scenario, 'utf8'
+  # NOTE probably should return a normalized copy
+  for operation in blueprint.operations
+    for reqres in [operation.request, operation.response]
+      reqres.headers = utils.normalizeHeaders reqres.headers
+      reqres.body = utils.maybeJsonBody reqres  if reqres.body?
+  blueprint
+
+
+exports.runOperations = (scenario, operations, params = {}, callbacks = {}) ->
+  for operation in operations
+    request = makeRequest operation.request, params, callbacks
+    expectedResponse = makeResponse operation.response, callbacks
+    actualResponse = getResponse request
+    result = exports.validateResponse actualResponse, expectedResponse
+    return result  if result.length isnt 0
+  # TODO
+
+
+exports.runScenario = (scenario, blueprint, params = {}, callbacks = {}) ->
+  exports.runOperations scenario, blueprint.operations, params, callbacks
+
+
 exports.run = (scenario, params = {}, callbacks = {}) ->
   blueprint = exports.readScenario scenario
   protocol = params.protocol or Const.DEFAULT_PROTOCOL
@@ -191,27 +177,18 @@ exports.run = (scenario, params = {}, callbacks = {}) ->
   }, params
 
   # TODO implement timeouts, spawn process?
-  exports.runScenario scenario, blueprint.operations, params, callbacks
-
-
-exports.readScenario = (scenario) ->
-  blueprint = blueprintParser.parse fs.readFileSync scenario, 'utf8'
-  # NOTE probably should return a normalized copy
-  for operation in blueprint.operations
-    for reqres in [operation.request, operation.response]
-      reqres.headers = utils.normalizeHeaders reqres.headers
-      reqres.body = utils.maybeJsonBody reqres  if reqres.body?
-  blueprint
-
-
-exports.runScenario = (scenario, blueprintOrOperations, params = {}, callbacks = {}) ->
-  if blueprintOrOperations.operations?
-    exports.runScenario scenario, blueprintOrOperations.operations, params, callbacks
-  operations = blueprintOrOperations
-  for operation in operations
-    request = makeRequest operation.request, params, callbacks
-    expectedResponse = makeResponse operation.response, callbacks
-    actualResponse = getResponse request
-    result = exports.validateResponse actualResponse, expectedResponse
-    return result  if result.length isnt 0
-  # TODO
+  {
+    finalParams
+    operationResults
+  } = exports.runScenario scenario, blueprint.operations, params, callbacks
+  failures = _.filter operation, (operationResult) ->
+    operationResult.status isnt 'pass'
+  status = 'pass'
+  status = 'fail'  unless failures.length is 0
+  {
+    status
+    description: blueprint.description
+    params
+    finalParams
+    operationResults
+  }

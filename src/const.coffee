@@ -1,6 +1,7 @@
+utils = require './utils'
 katt = require './katt'
 
-module.exports =
+exports = module.exports =
   PROTOCOL_HTTP: 'http:'
   PROTOCOL_HTTPS: 'https:'
   DEFAULT_SCENARIO_TIMEOUT: 120000
@@ -12,3 +13,26 @@ module.exports =
   DEFAULT_PARSE_FUNCTION: katt.parse
   DEFAULT_REQUEST_FUNCTION: katt.request
   DEFUALT_VALIDATE_FUNCTION: katt.validate
+
+exports.TAGS =
+  MATCH_ANY: '{{_}}'
+  RECALL_BEGIN: '{{<'
+  RECALL_END: '}}'
+  STORE_BEGIN: '{{>'
+  STORE_END: '}}'
+  MARKER_BEGIN: '{'
+  MARKER_END: '}'
+exports.TAGS_RE = do () ->
+  result = {}
+  result[tagName] = utils.regexEscape tag  for tagName, tag of exports.TAGS
+  result
+
+exports.storeRE = ///
+  ^#{exports.TAGS_RE.STORE_BEGIN}
+  [^#{exports.TAGS_RE.MARKER_END}]+
+  #{exports.TAGS_RE.STORE_END}$
+///
+
+exports.matchAnyRE = ///
+  #{exports.TAGS_RE.MATCH_ANY}
+///
