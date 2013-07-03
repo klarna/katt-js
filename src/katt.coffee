@@ -144,17 +144,17 @@ exports.recallDeep = (expectedValue, vars = {}) ->
 exports.readScenario = (scenario) ->
   blueprint = blueprintParser.parse fs.readFileSync scenario, 'utf8'
   # NOTE probably should return a normalized copy
-  for operation in blueprint.operations
-    for reqres in [operation.request, operation.response]
+  for transaction in blueprint.transactions
+    for reqres in [transaction.request, transaction.response]
       reqres.headers = utils.normalizeHeaders reqres.headers
       reqres.body = utils.maybeJsonBody reqres  if reqres.body?
   blueprint
 
 
-exports.runOperations = (scenario, operations, params = {}, callbacks = {}) ->
-  for operation in operations
-    request = makeRequest operation.request, params, callbacks
-    expectedResponse = makeResponse operation.response, callbacks
+exports.runTransactions = (scenario, transactions, params = {}, callbacks = {}) ->
+  for transaction in transactions
+    request = makeRequest transaction.request, params, callbacks
+    expectedResponse = makeResponse transaction.response, callbacks
     actualResponse = getResponse request
     result = exports.validateResponse actualResponse, expectedResponse
     return result  if result.length isnt 0
@@ -162,7 +162,7 @@ exports.runOperations = (scenario, operations, params = {}, callbacks = {}) ->
 
 
 exports.runScenario = (scenario, blueprint, params = {}, callbacks = {}) ->
-  exports.runOperations scenario, blueprint.operations, params, callbacks
+  exports.runTransactions scenario, blueprint.transactions, params, callbacks
 
 
 exports.run = (scenario, params = {}, callbacks = {}) ->
@@ -179,10 +179,10 @@ exports.run = (scenario, params = {}, callbacks = {}) ->
   # TODO implement timeouts, spawn process?
   {
     finalParams
-    operationResults
-  } = exports.runScenario scenario, blueprint.operations, params, callbacks
-  failures = _.filter operation, (operationResult) ->
-    operationResult.status isnt 'pass'
+    transactionResults
+  } = exports.runScenario scenario, blueprint.transactions, params, callbacks
+  failures = _.filter transaction, (transactionResult) ->
+    transactionResult.status isnt 'pass'
   status = 'pass'
   status = 'fail'  unless failures.length is 0
   {
@@ -190,5 +190,5 @@ exports.run = (scenario, params = {}, callbacks = {}) ->
     description: blueprint.description
     params
     finalParams
-    operationResults
+    transactionResults
   }
