@@ -1,7 +1,7 @@
+mockery = require 'mockery'
 nock = require 'nock'
-sandboxedModule = require 'sandboxed-module'
 
 module.exports = {
+  mockery
   nock
-  sandboxedModule
 }
