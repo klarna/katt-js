@@ -23,8 +23,8 @@ exports.run.before = () ->
 
   # Mock response for Step 1
   # (default hostname is 127.0.0.1, default port is 80, default protocol is http)
-  nock('http://127.0.0.1/step1')
-    .post('/foo/examples')
+  nock('http://127.0.0.1')
+    .post('/step1')
     .reply 200, '',
       'Location': 'http://127.0.0.1/step2'
 
@@ -56,19 +56,18 @@ exports.run.before = () ->
   # Mock response for test-params
   nock('http://example.com')
     .post('/test-params')
-    .matchHeader('Accept', 'application/json')
+    .matchHeader('Accept', 'text/html')
     .matchHeader('Content-Type', 'application/vnd.katt.test-v1+json')
     .reply 404, 'Not found',
       'Content-Type': 'text/html'
 
   # Mock response for api mismatch test
   nock('http://127.0.0.1')
-    .head('/api-mismatch')
+    .post('/api-mismatch')
     .matchHeader('Accept', 'application/json')
     .matchHeader('Content-Type', 'application/json')
     .reply 401, '{\n    "error": "unauthorized"\n}',
       'Content-Type': 'application/json'
-      'Content-Type': 'text/html'
 
   {
     katt

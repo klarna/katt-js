@@ -1,23 +1,69 @@
 url = require 'url'
 _ = require 'lodash'
+Const = require './const'
 
+
+# STORE
+exports.store = (actualValue, expectedValue, params = {}) ->
+  return params  unless _.isString expectedValue
+  return params  if Const.matchAnyRE.test expectedValue
+  return params  unless Const.storeRE.test expectedValue
+  expectedValue = expectedValue.replace Const.TAGS.STORE_BEGIN, ''
+  expectedValue = expectedValue.replace Const.TAGS.STORE_END, ''
+  params[expectedValue] = actualValue
+
+
+exports.storeDeep = (actualValue, expectedValue, params = {}) ->
+  if exports.isObjectOrArray(actualValue) and exports.isObjectOrArray(expectedValue)
+    keys = _.sortBy _.union _.keys(actualValue), _.keys(expectedValue)
+    for key in keys
+      if exports.isObjectOrArray expectedValue[key]
+        exports.storeDeep actualValue[key], expectedValue[key], params
+      else
+        exports.store actualValue[key], expectedValue[key], params
+    params
+  else
+    exports.store actualValue, expectedValue, params
+
+
+# RECALL
+exports.recall = (expectedValue, params = {}) ->
+  return expectedValue  unless _.isString expectedValue
+  for key, value of params
+    keyRE = Const.regexEscape key
+    keyRE = new RegExp "#{Const.TAGS_RE.RECALL_BEGIN}#{keyRE}#{Const.TAGS_RE.RECALL_END}", 'g'
+    expectedValue = expectedValue.replace keyRE, value
+  expectedValue
+
+
+exports.recallDeep = (expectedValue, params = {}) ->
+  if exports.isObjectOrArray expectedValue
+    keys = _.keys expectedValue
+    expectedValue = _.clone expectedValue
+    for key in keys
+      if exports.isObjectOrArray expectedValue[key]
+        expectedValue[key] = exports.recallDeep expectedValue[key], params
+      else
+        expectedValue[key] = exports.recall expectedValue[key], params
+    expectedValue
+  else
+    exports.recall expectedValue, params
+
+
+# MISC
 exports.defaultPort =
   'http:': '80'
   'https:': '443'
 
-exports.isPlainObjectOrArray = (obj) ->
-  _.isPlainObject(obj) or _.isArray(obj)
+exports.isObjectOrArray = (obj) ->
+  _.isObject(obj) or _.isArray(obj)
 
-exports.regexEscape = (text) ->
-  text.replace /[\-\[\]\/\{\}\(\)\*\+\?\.\,\\\^\$\|\#\s]/g, '\\$&'
-
-exports.isJsonBody = (reqres) ->
-  contentType = reqres.headers?['content-type'] or reqres.get?('content-type') or ''
+exports.isJsonCT = (contentType) ->
   /\bjson\b/.test contentType
 
-
 exports.maybeJsonBody = (reqres) ->
-  if exports.isJsonBody reqres
+  contentType = reqres.headers?['content-type'] or reqres.get?('content-type') or ''
+  if exports.isJsonCT contentType
     try
       return JSON.parse reqres.body
   reqres.body
@@ -38,11 +84,11 @@ exports.normalizeHeaders = (headers) ->
   result
 
 
-exports.normalizeUrl = (Url, vars = {}) ->
+exports.normalizeUrl = (Url, params = {}) ->
   result = url.parse Url
   result.port ?= exports.defaultPort[result.protocol]
-  sameHostname = (result.hostname is vars.hostname)
-  samePort = not vars.port or (result.port is vars.port.toString())
+  sameHostname = (result.hostname is params.hostname)
+  samePort = not params.port or (result.port is params.port.toString())
   if sameHostname and samePort
     delete result.protocol
     delete result.slashes

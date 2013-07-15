@@ -15,180 +15,132 @@
 ###
 
 fs = require 'fs'
+urlLib = require 'url'
 _ = require 'lodash'
 blueprintParser = require 'katt-blueprint-parser'
 utils = exports.utils = require './utils'
 Const = exports.Const = require './const'
+defaultParams =
+  protocol: Const.DEFAULT_PROTOCOL
+  hostname: Const.DEFAULT_HOSTNAME
+  port: Const.DEFAULT_PORT
+  scenarioTimeout: Const.DEFAULT_SCENARIO_TIMEOUT
+  requestTimeout: Const.DEFAULT_REQUEST_TIMEOUT
+defaultCallbacks = require './callbacks'
 
 
 #
 # API
 #
 
-# VALIDATE
-exports.validate = (key, actualValue, expectedValue, vars = {}, result = []) ->
-  return result  if matchAnyRE.test expectedValue
-  # maybe store, maybe recall
-  exports.store actualValue, expectedValue, vars
-  expectedValue = exports.recall expectedValue, vars
-
-  return result  if actualValue is expectedValue
-  unless actualValue?
-    result.push.apply result, [['missing_value', key, actualValue, expectedValue]]
-    return result
-  if storeRE.test actualValue
-    result.push.apply result, [['empty_value', key, actualValue, expectedValue]]
-    return result
-  result.push.apply result, [['not_equal', key, actualValue, expectedValue]]
-  result
+exports.makeRequestUrl = (url, params, callbacks) ->
+  return url  if url.indexOf(Const.PROTOCOL_HTTP) is 0
+  return url  if url.indexOf(Const.PROTOCOL_HTTPS) is 0
+  urlLib.format
+    protocol: params.protocol
+    hostname: params.hostname
+    port: params.port
+    pathname: url
 
 
-exports.validateDeep = (key, actualValue, expectedValue, vars, result) ->
-  if utils.isPlainObjectOrArray(actualValue) and utils.isPlainObjectOrArray(expectedValue)
-    keys = _.sortBy _.union _.keys(actualValue), _.keys(expectedValue)
-    for key in keys
-      if utils.isPlainObjectOrArray expectedValue[key]
-        exports.validateDeep key, actualValue[key], expectedValue[key], vars, result
-      else
-        exports.validate key, actualValue[key], expectedValue[key], vars, result
-    result
-  else
-    exports.validate key, actualValue, expectedValue, vars, result
+exports.makeKattRequest = (request, params, callbacks) ->
+  request = utils.recallDeep request, params
+  url = utils.recall request.url, params
+  request.url = exports.makeRequestUrl url, params, callbacks
+  request
 
 
-exports.validateUrl = (actualUrl, expectedUrl, vars = {}) ->
-  result = []
-  actualUrl = utils.normalizeUrl actualUrl, vars
-  expectedUrl = exports.recall expectedUrl, vars
-  expectedUrl = utils.normalizeUrl expectedUrl, vars
+exports.makeKattResponse = (response, params, callbacks) ->
+  response = utils.recallDeep response, params
+  response.body = callbacks.parse {
+    headers: response.headers
+    body: response.body
+    params
+    callbacks
+  }
+  response
 
-  exports.validate 'url', actualUrl, expectedUrl, vars, result
-  result
-
-
-exports.validateHeaders = (actualHeaders, expectedHeaders, vars = {}) ->
-  result = []
-  actualHeaders = utils.normalizeHeaders actualHeaders
-  expectedHeaders = exports.recallDeep expectedHeaders, vars
-  expectedHeaders = utils.normalizeHeaders expectedHeaders
-
-  for header of expectedHeaders
-    exports.validate header, actualHeaders[header], expectedHeaders[header], vars, result
-  result
-
-
-exports.validateBody = (actualBody, expectedBody, vars = {}, result = []) ->
-  result = []
-  if utils.isPlainObjectOrArray(actualBody) and utils.isPlainObjectOrArray(expectedBody)
-    exports.validateDeep 'body', actualBody, expectedBody, vars, result
-  else
-    # actualBody = JSON.stringify actualBody, null, 2  unless _.isString actualBody
-    # expectedBody = JSON.stringify expectedBody, null, 2  unless _.isString expectedBody
-    exports.validate 'body', actualBody, expectedBody, vars, result
-
-
-exports.validateResponse = (actualResponse, expectedResponse, vars = {}, result = []) ->
-  # TODO check status
-  # TODO check headers
-  # TODO check body
+exports.runTransaction = ({scenario, transaction, params, callbacks}, next) ->
+  {
+    description
+    request
+    response
+  } = transaction
+  initialParams = _.cloneDeep params
+  request = exports.makeKattRequest request, params, callbacks
+  expected = exports.makeKattResponse response, params, callbacks
+  callbacks.request {request, params, callbacks}, (err, actual) ->
+    return next err  if err?
+    callbacks.validate {actual, expected, params, callbacks}, (err, errors) ->
+      return next err  if err?
+      next null, {
+        description
+        request
+        params: initialParams
+        errors
+      }
 
 
-# STORE
-exports.store = (actualValue, expectedValue, vars = {}) ->
-  return vars  unless _.isString expectedValue
-  return vars  if matchAnyRE.test expectedValue
-  return vars  unless storeRE.test expectedValue
-  expectedValue = expectedValue.replace Const.TAGS.STORE_BEGIN, ''
-  expectedValue = expectedValue.replace Const.TAGS.STORE_END, ''
-  vars[expectedValue] = actualValue
+exports.runTransactions = ({scenario, transactions, params, callbacks}, next) ->
+  params ?= {}
+  callbacks ?= {}
+  params = _.defaults params, defaultParams
+  callbacks = _.defaults callbacks, defaultCallbacks
+  initialParams = _.cloneDeep params
+
+  transactionIndex = 0
+  transaction = transactions[transactionIndex]
+  transactionResults = []
+  loopNext = (err, iterationResult) ->
+    return next err  if err?
+    transactionResults.push iterationResult
+    transactionIndex += 1
+    transaction = transactions[transactionIndex]
+    if transaction?
+      exports.runTransaction {scenario, transaction, params, callbacks}, loopNext
+    else
+      next null, {
+        finalParams: params
+        transactionResults
+      }
+  exports.runTransaction {scenario, transaction, params, callbacks}, loopNext
 
 
-exports.storeDeep = (actualValue, expectedValue, vars = {}) ->
-  if utils.isPlainObjectOrArray(actualValue) and utils.isPlainObjectOrArray(expectedValue)
-    keys = _.sortBy _.union _.keys(actualValue), _.keys(expectedValue)
-    for key in keys
-      if utils.isPlainObjectOrArray expectedValue[key]
-        exports.storeDeep actualValue[key], expectedValue[key], vars
-      else
-        exports.store actualValue[key], expectedValue[key], vars
-    vars
-  else
-    exports.store actualValue, expectedValue, vars
+exports.runScenario = ({scenario, blueprint, params, callbacks}, next) ->
+  transactions = blueprint.transactions
+  exports.runTransactions {scenario, transactions, params, callbacks}, next
 
 
-# RECALL
-exports.recall = (expectedValue, vars = {}) ->
-  return expectedValue  unless _.isString expectedValue
-  for key, value of vars
-    keyRE = utils.regexEscape key
-    keyRE = new RegExp "#{Const.TAGS_RE.RECALL_BEGIN}#{keyRE}#{Const.TAGS_RE.RECALL_END}", 'g'
-    expectedValue = expectedValue.replace keyRE, value
-  expectedValue
-
-
-exports.recallDeep = (expectedValue, vars = {}) ->
-  if utils.isPlainObjectOrArray expectedValue
-    keys = _.keys expectedValue
-    expectedValue = _.clone expectedValue
-    for key in keys
-      if utils.isPlainObjectOrArray expectedValue[key]
-        expectedValue[key] = exports.recallDeep expectedValue[key], vars
-      else
-        expectedValue[key] = exports.recall expectedValue[key], vars
-    expectedValue
-  else
-    exports.recall expectedValue, vars
-
-
-# RUN
 exports.readScenario = (scenario) ->
   blueprint = blueprintParser.parse fs.readFileSync scenario, 'utf8'
+  return blueprint
+  # FIXME
   # NOTE probably should return a normalized copy
   for transaction in blueprint.transactions
     for reqres in [transaction.request, transaction.response]
       reqres.headers = utils.normalizeHeaders reqres.headers
-      reqres.body = utils.maybeJsonBody reqres  if reqres.body?
+      # reqres.body = utils.maybeJsonBody reqres  if reqres.body?
   blueprint
 
 
-exports.runTransactions = (scenario, transactions, params = {}, callbacks = {}) ->
-  for transaction in transactions
-    request = makeRequest transaction.request, params, callbacks
-    expectedResponse = makeResponse transaction.response, callbacks
-    actualResponse = getResponse request
-    result = exports.validateResponse actualResponse, expectedResponse
-    return result  if result.length isnt 0
-  # TODO
-
-
-exports.runScenario = (scenario, blueprint, params = {}, callbacks = {}) ->
-  exports.runTransactions scenario, blueprint.transactions, params, callbacks
-
-
-exports.run = (scenario, params = {}, callbacks = {}) ->
+exports.run = ({scenario, params, callbacks}, next) ->
   blueprint = exports.readScenario scenario
-  protocol = params.protocol or Const.DEFAULT_PROTOCOL
-  params = _.merge {
-    protocol: Const.DEFAULT_PROTOCOL
-    hostname: Const.DEFAULT_HOSTNAME
-    port: Const.DEFAULT_PORT
-    scenarioTimeout: Const.DEFAULT_SCENARIO_TIMEOUT
-    requestTimeout: Const.DEFAULT_REQUEST_TIMEOUT
-  }, params
 
   # TODO implement timeouts, spawn process?
-  {
-    finalParams
-    transactionResults
-  } = exports.runScenario scenario, blueprint.transactions, params, callbacks
-  failures = _.filter transaction, (transactionResult) ->
-    transactionResult.status isnt 'pass'
-  status = 'pass'
-  status = 'fail'  unless failures.length is 0
-  {
-    status
-    description: blueprint.description
-    params
-    finalParams
-    transactionResults
-  }
+  exports.runScenario {scenario, blueprint, params, callbacks}, (err, result) ->
+    return next err  if err?
+    {
+      finalParams
+      transactionResults
+    } = result
+    failures = _.filter transactionResults, (transactionResult) ->
+      transactionResult.errors.length
+    status = 'pass'
+    status = 'fail'  unless failures.length is 0
+    next null, {
+      status
+      scenario
+      params
+      finalParams
+      transactionResults
+    }

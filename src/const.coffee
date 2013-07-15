@@ -14,6 +14,9 @@ exports = module.exports =
   DEFAULT_REQUEST_FUNCTION: katt.request
   DEFUALT_VALIDATE_FUNCTION: katt.validate
 
+exports.regexEscape = (text) ->
+  text.replace /[\-\[\]\/\{\}\(\)\*\+\?\.\,\\\^\$\|\#\s]/g, '\\$&'
+
 exports.TAGS =
   MATCH_ANY: '{{_}}'
   RECALL_BEGIN: '{{<'
@@ -24,7 +27,7 @@ exports.TAGS =
   MARKER_END: '}'
 exports.TAGS_RE = do () ->
   result = {}
-  result[tagName] = utils.regexEscape tag  for tagName, tag of exports.TAGS
+  result[tagName] = exports.regexEscape tag  for tagName, tag of exports.TAGS
   result
 
 exports.storeRE = ///
