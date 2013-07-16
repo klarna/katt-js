@@ -4,7 +4,6 @@
 } = require './_utils'
 fixtures = require './katt.fixtures'
 katt = undefined # delayed
-diff = require('json-diff').diff
 
 describe 'katt', () ->
   describe 'run', () ->
