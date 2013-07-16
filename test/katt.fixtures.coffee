@@ -25,7 +25,7 @@ exports.run.before = () ->
   # (default hostname is 127.0.0.1, default port is 80, default protocol is http)
   nock('http://127.0.0.1')
     .post('/step1')
-    .reply 200, '',
+    .reply 201, '',
       'Location': 'http://127.0.0.1/step2'
 
   # Mock response for Step 2
@@ -44,7 +44,7 @@ exports.run.before = () ->
   # Mock response for Step 4
   nock('http://127.0.0.1')
     .post('/step2/step4')
-    .reply 402, '{\n    "error": "payment_required"\n}',
+    .reply 402, '{\n    "error": "payment required"\n}',
       'Content-Type': 'application/json'
 
   # Mock response for Step 5

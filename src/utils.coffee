@@ -5,12 +5,13 @@ Const = require './const'
 
 # STORE
 exports.store = (actualValue, expectedValue, params = {}) ->
-  return params  unless _.isString expectedValue
-  return params  if Const.matchAnyRE.test expectedValue
-  return params  unless Const.storeRE.test expectedValue
+  return expectedValue  unless _.isString expectedValue
+  return expectedValue  if Const.matchAnyRE.test expectedValue
+  return expectedValue  unless Const.storeRE.test expectedValue
   expectedValue = expectedValue.replace Const.TAGS.STORE_BEGIN, ''
   expectedValue = expectedValue.replace Const.TAGS.STORE_END, ''
   params[expectedValue] = actualValue
+  actualValue
 
 
 exports.storeDeep = (actualValue, expectedValue, params = {}) ->
@@ -21,9 +22,9 @@ exports.storeDeep = (actualValue, expectedValue, params = {}) ->
         exports.storeDeep actualValue[key], expectedValue[key], params
       else
         exports.store actualValue[key], expectedValue[key], params
-    params
   else
     exports.store actualValue, expectedValue, params
+  params
 
 
 # RECALL

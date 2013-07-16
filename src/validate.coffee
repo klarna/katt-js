@@ -7,9 +7,9 @@ utils = require './utils'
 exports.validate = (key, actualValue = '', expectedValue = '', vars = {}, errors = []) ->
   actualValue = actualValue.toString()
   expectedValue = expectedValue.toString()
-  return result  if Const.matchAnyRE.test expectedValue
+  return errors  if Const.matchAnyRE.test expectedValue
   # maybe store, maybe recall
-  utils.store actualValue, expectedValue, vars
+  expectedValue = utils.store actualValue, expectedValue, vars
   expectedValue = utils.recall expectedValue, vars
 
   return errors  if actualValue is expectedValue

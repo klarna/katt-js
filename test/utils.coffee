@@ -8,12 +8,7 @@
 
 
 describe 'utils', () ->
-  describe 'isJsonBody', () ->
-    makeReqRes = (CT) ->
-      {
-        headers:
-          'content-type': CT
-      }
+  describe 'isJsonCT', () ->
     it 'should detect regular JSON media-types', () ->
       CTs = [
         'application/json'
@@ -21,8 +16,7 @@ describe 'utils', () ->
         'application/json; charset=utf-8'
       ]
       for CT in CTs
-        reqRes = makeReqRes CT
-        utils.isJsonBody(reqRes).should.eql true
+        utils.isJsonCT(CT).should.eql true
 
     it 'should detect suffixed JSON media-types', () ->
       CTs = [
@@ -31,8 +25,7 @@ describe 'utils', () ->
         'application/vnd.example.com-v1+json'
       ]
       for CT in CTs
-        reqRes = makeReqRes CT
-        utils.isJsonBody(reqRes).should.eql true
+        utils.isJsonCT(CT).should.eql true
 
 
   describe 'maybeJsonBody', () ->

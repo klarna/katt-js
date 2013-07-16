@@ -49,7 +49,7 @@ describe 'katt', () ->
         # _.isEqual(result, testResult).should.eql true
         done()
 
-    it.only 'should run and fail on api mismatch', (done) ->
+    it 'should run and fail on api mismatch', (done) ->
       scenario = '/mock/api-mismatch.apib'
       katt.run {scenario}, (err, result) ->
         result.status.should.eql 'fail'
