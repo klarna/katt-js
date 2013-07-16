@@ -83,10 +83,6 @@ exports.runTransaction = ({scenario, transaction, params, callbacks}, next) ->
 
 
 exports.runTransactions = ({scenario, transactions, params, callbacks}, next) ->
-  params ?= {}
-  callbacks ?= {}
-  params = _.defaults params, defaultParams
-  callbacks = _.defaults callbacks, defaultCallbacks
   initialParams = _.cloneDeep params
 
   transactionIndex = 0
@@ -117,10 +113,16 @@ exports.readScenario = (scenario) ->
 
 
 exports.run = ({scenario, params, callbacks}, next) ->
+  params ?= {}
+  callbacks ?= {}
+  params = _.defaults params, defaultParams
+  callbacks = _.defaults callbacks, defaultCallbacks
   blueprint = exports.readScenario scenario
 
-  # TODO implement timeouts, spawn process?
+  scenarioTimedOut = false
   exports.runScenario {scenario, blueprint, params, callbacks}, (err, result) ->
+    return  if scenarioTimedOut
+    clearTimeout scenarioTimer
     return next err  if err?
     {
       finalParams
@@ -137,3 +139,11 @@ exports.run = ({scenario, params, callbacks}, next) ->
       finalParams
       transactionResults
     }
+  scenarioTimingOut = () ->
+    scenarioTimedOut = true
+    next {
+      status: error
+      reason: 'timeout'
+      details: params.scenarioTimeout
+    }
+  scenarioTimer = setTimeout scenarioTimingOut, params.scenarioTimeout

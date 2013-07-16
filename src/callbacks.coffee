@@ -44,6 +44,9 @@ exports.httpRequest = ({request, params, callbacks}, next) ->
         body: res.body or null
     res.on 'error', (e) ->
       next e
+  req.on 'socket', (socket) ->
+    socket.setTimeout params.requestTimeout () ->
+      req.abort()
   req.on 'data', () ->
     req.write request.body, 'utf8'  if request.body?
   req.on 'error', (e) ->
