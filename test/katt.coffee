@@ -18,16 +18,6 @@ describe 'katt', () ->
       scenario = '/mock/basic.apib'
       katt.run {scenario}, (err, result) ->
         result.status.should.eql 'pass'
-        # testResult = {
-        #   status: 'pass'
-        #   scenario
-        #   finalParams:
-        #     protocol: 'http:'
-        #     hostname: '127.0.0.1'
-        #     example_uri: 'http://127.0.0.1/step2'
-        # }
-        # _.merge testResult, result, _.defaults
-        # _.isEqual(result, testResult).should.eql true
         done()
 
     it 'should run a scenario with params', (done) ->
@@ -38,15 +28,6 @@ describe 'katt', () ->
         version: '1'
       katt.run {scenario, params}, (err, result) ->
         result.status.should.eql 'pass'
-        # testResult = {
-        #   status: 'pass'
-        #   scenario
-        #   params
-        #   finalParams: _.merge {}, params,
-        #     protocol: 'http:'
-        # }
-        # _.merge testResult, result, _.defaults
-        # _.isEqual(result, testResult).should.eql true
         done()
 
     it 'should run and fail on api mismatch', (done) ->

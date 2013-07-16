@@ -10,7 +10,7 @@ utils = require './utils'
 
 
 exports.parse = ({headers, body, params, callbacks}) ->
-  contentType = _.find headers, (value, header) -> header.toLowerCase() is 'content-type' # FIXME normalize headers
+  contentType = headers['content-type']
   return JSON.parse body  if contentType? and utils.isJsonCT contentType
   body
 
@@ -18,8 +18,8 @@ exports.parse = ({headers, body, params, callbacks}) ->
 exports.request = ({request, params, callbacks}, next) ->
   exports.httpRequest {request, params, callbacks}, (err, res) ->
     return next err  if err
-    # FIXME normalize headers
-    res.body = callbacks.parse {headers: res.headers, body: res.body, params, callbacks}
+    headers = utils.normalizeHeaders res.headers
+    res.body = callbacks.parse {headers, body: res.body, params, callbacks}
     next null, {
       status: res.statusCode
       headers: res.headers

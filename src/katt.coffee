@@ -52,8 +52,9 @@ exports.makeKattRequest = (request, params, callbacks) ->
 
 exports.makeKattResponse = (response, params, callbacks) ->
   response = utils.recallDeep response, params
+  headers = utils.normalizeHeaders response.headers
   response.body = callbacks.parse {
-    headers: response.headers
+    headers
     body: response.body
     params
     callbacks
@@ -112,15 +113,7 @@ exports.runScenario = ({scenario, blueprint, params, callbacks}, next) ->
 
 
 exports.readScenario = (scenario) ->
-  blueprint = blueprintParser.parse fs.readFileSync scenario, 'utf8'
-  return blueprint
-  # FIXME
-  # NOTE probably should return a normalized copy
-  for transaction in blueprint.transactions
-    for reqres in [transaction.request, transaction.response]
-      reqres.headers = utils.normalizeHeaders reqres.headers
-      # reqres.body = utils.maybeJsonBody reqres  if reqres.body?
-  blueprint
+  blueprintParser.parse fs.readFileSync scenario, 'utf8'
 
 
 exports.run = ({scenario, params, callbacks}, next) ->

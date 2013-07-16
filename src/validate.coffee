@@ -5,9 +5,17 @@ utils = require './utils'
 
 # VALIDATE
 exports.validate = (key, actualValue = '', expectedValue = '', vars = {}, errors = []) ->
+  return errors  if Const.matchAnyRE.test expectedValue
+  if utils.isObjectOrArray(actualValue) or utils.isObjectOrArray(expectedValue)
+    errors.push {
+      reason: 'not_equal'
+      key
+      actualValue
+      expectedValue
+    }
+    return errors
   actualValue = actualValue.toString()
   expectedValue = expectedValue.toString()
-  return errors  if Const.matchAnyRE.test expectedValue
   # maybe store, maybe recall
   expectedValue = utils.store actualValue, expectedValue, vars
   expectedValue = utils.recall expectedValue, vars
@@ -79,6 +87,4 @@ exports.validateBody = (actualBody, expectedBody, vars = {}, errors = []) ->
   if utils.isObjectOrArray(actualBody) and utils.isObjectOrArray(expectedBody)
     exports.validateDeep 'body', actualBody, expectedBody, vars, errors
   else
-    # actualBody = JSON.stringify actualBody, null, 2  unless _.isString actualBody
-    # expectedBody = JSON.stringify expectedBody, null, 2  unless _.isString expectedBody
     exports.validate 'body', actualBody, expectedBody, vars, errors
