@@ -1,5 +1,4 @@
 utils = require './utils'
-katt = require './katt'
 
 exports = module.exports =
   PROTOCOL_HTTP: 'http:'
@@ -10,9 +9,6 @@ exports = module.exports =
   DEFAULT_HOSTNAME: '127.0.0.1'
   DEFAULT_PORT_HTTP: 80
   DEFAULT_PORT_HTTPS: 443
-  DEFAULT_PARSE_FUNCTION: katt.parse
-  DEFAULT_REQUEST_FUNCTION: katt.request
-  DEFUALT_VALIDATE_FUNCTION: katt.validate
 
 exports.regexEscape = (text) ->
   text.replace /[\-\[\]\/\{\}\(\)\*\+\?\.\,\\\^\$\|\#\s]/g, '\\$&'
