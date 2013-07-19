@@ -4,87 +4,87 @@ utils = require './utils'
 
 
 # VALIDATE
-exports.validate = (key, actualValue = '', expectedValue = '', vars = {}, errors = []) ->
-  return errors  if Const.matchAnyRE.test expectedValue
-  if utils.isObjectOrArray(actualValue) or utils.isObjectOrArray(expectedValue)
+exports.validate = (key, actual = '', expected = '', params = {}, errors = []) ->
+  return errors  if Const.matchAnyRE.test expected
+  if utils.isObjectOrArray(actual) or utils.isObjectOrArray(expected)
     errors.push {
       reason: 'not_equal'
       key
-      actualValue
-      expectedValue
+      actual
+      expected
     }
     return errors
-  actualValue = actualValue.toString()
-  expectedValue = expectedValue.toString()
+  actual = actual.toString()
+  expected = expected.toString()
   # maybe store, maybe recall
-  expectedValue = utils.store actualValue, expectedValue, vars
-  expectedValue = utils.recall expectedValue, vars
+  expected = utils.store actual, expected, params
+  expected = utils.recall expected, params
 
-  return errors  if actualValue is expectedValue
-  unless actualValue?
+  return errors  if actual is expected
+  unless actual?
     errors.push {
       reason: 'missing_value'
       key
-      actualValue
-      expectedValue
+      actual
+      expected
     }
     return errors
-  if Const.storeRE.test actualValue
+  if Const.storeRE.test actual
     errros.push {
       reason: 'empty_value'
       key
-      actualValue
-      expectedValue
+      actual
+      expected
     }
     return errors
   errors.push {
     reason: 'not_equal'
     key
-    actualValue
-    expectedValue
+    actual
+    expected
   }
   errors
 
 
-exports.validateDeep = (key, actualValue, expectedValue, vars, errors) ->
-  if utils.isObjectOrArray(actualValue) and utils.isObjectOrArray(expectedValue)
-    keys = _.sortBy _.union _.keys(actualValue), _.keys(expectedValue)
+exports.validateDeep = (key, actual, expected, params, errors) ->
+  if utils.isObjectOrArray(actual) and utils.isObjectOrArray(expected)
+    keys = _.sortBy _.union _.keys(actual), _.keys(expected)
     for key in keys
-      if utils.isObjectOrArray expectedValue[key]
-        exports.validateDeep key, actualValue[key], expectedValue[key], vars, errors
+      if utils.isObjectOrArray expected[key]
+        exports.validateDeep key, actual[key], expected[key], params, errors
       else
-        exports.validate key, actualValue[key], expectedValue[key], vars, errors
+        exports.validate key, actual[key], expected[key], params, errors
     errors
   else
-    exports.validate key, actualValue, expectedValue, vars, errors
+    exports.validate key, actual, expected, params, errors
 
 
-exports.validateStatusCode = (actual, expected, vars, errors) ->
-  exports.validate 'status', actual, expected, vars, errors
+exports.validateStatusCode = (actual, expected, params, errors) ->
+  exports.validate 'status', actual, expected, params, errors
   errors
 
 
-exports.validateUrl = (actualUrl, expectedUrl, vars = {}, errors = []) ->
-  actualUrl = utils.normalizeUrl actualUrl, vars
-  expectedUrl = utils.recall expectedUrl, vars
-  expectedUrl = utils.normalizeUrl expectedUrl, vars
+exports.validateUrl = (actual, expected, params = {}, errors = []) ->
+  actual = utils.normalizeUrl actual, params
+  expected = utils.recall expected, params
+  expected = utils.normalizeUrl expected, params
 
-  exports.validate 'url', actualUrl, expectedUrl, vars, errors
+  exports.validate 'url', actual, expected, params, errors
   errors
 
 
-exports.validateHeaders = (actualHeaders, expectedHeaders, vars = {}, errors = []) ->
-  actualHeaders = utils.normalizeHeaders actualHeaders
-  expectedHeaders = utils.recallDeep expectedHeaders, vars
-  expectedHeaders = utils.normalizeHeaders expectedHeaders
+exports.validateHeaders = (actual, expected, params = {}, errors = []) ->
+  actual = utils.normalizeHeaders actual
+  expected = utils.recallDeep expected, params
+  expected = utils.normalizeHeaders expected
 
-  for header of expectedHeaders
-    exports.validate header, actualHeaders[header], expectedHeaders[header], vars, errors
+  for header of expected
+    exports.validate header, actual[header], expected[header], params, errors
   errors
 
 
-exports.validateBody = (actualBody, expectedBody, vars = {}, errors = []) ->
-  if utils.isObjectOrArray(actualBody) and utils.isObjectOrArray(expectedBody)
-    exports.validateDeep 'body', actualBody, expectedBody, vars, errors
+exports.validateBody = (actual, expected, params = {}, errors = []) ->
+  if utils.isObjectOrArray(actual) and utils.isObjectOrArray(expected)
+    exports.validateDeep 'body', actual, expected, params, errors
   else
-    exports.validate 'body', actualBody, expectedBody, vars, errors
+    exports.validate 'body', actual, expected, params, errors
