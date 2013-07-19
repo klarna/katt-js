@@ -42,15 +42,12 @@ exports.httpRequest = ({request, params, callbacks}, next) ->
         statusCode: res.statusCode
         headers: res.headers
         body: res.body or null
-    res.on 'error', (e) ->
-      next e
+    res.on 'error', next
   req.on 'socket', (socket) ->
-    socket.setTimeout params.requestTimeout () ->
-      req.abort()
+    socket.setTimeout params.requestTimeout, req.abort
   req.on 'data', () ->
     req.write request.body, 'utf8'  if request.body?
-  req.on 'error', (e) ->
-    next e
+  req.on 'error', next
   req.end()
 
 
