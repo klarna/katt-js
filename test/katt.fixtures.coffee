@@ -13,6 +13,7 @@ exports.run.before = () ->
     return fsTest1  if filename is '/mock/basic.apib'
     return fsTest2  if filename is '/mock/test-params.apib'
     return fsTest3  if filename is '/mock/api-mismatch.apib'
+    return fsTest4  if filename is '/mock/unexpected-disallow.apib'
     fs.readFileSync.apply fs, arguments
   mockery.registerMock 'fs', fsMock
   mockery.enable
@@ -56,10 +57,15 @@ exports.run.before = () ->
   # Mock response for test-params
   nock('http://example.com')
     .post('/test-params')
-    .matchHeader('Accept', 'text/html')
-    .matchHeader('Content-Type', 'application/vnd.katt.test-v1+json')
-    .reply 404, 'Not found',
-      'Content-Type': 'text/html'
+    .reply 200, JSON.stringify({
+      ok: 'hi'
+      'null': null
+      boolean: true
+      integer: 1
+      float: 1.1
+      string: 'string'
+      binary: 'binary'
+    }, null, 4), 'Content-Type': 'application/vnd.katt.test-v1+json'
 
   # Mock response for api mismatch test
   nock('http://127.0.0.1')
@@ -67,6 +73,12 @@ exports.run.before = () ->
     .matchHeader('Accept', 'application/json')
     .matchHeader('Content-Type', 'application/json')
     .reply 401, '{\n    "error": "unauthorized"\n}',
+      'Content-Type': 'application/json'
+
+  # Mock response for unexpected disallow test
+  nock('http://127.0.0.1')
+    .get('/unexpected-disallow')
+    .reply 401, '{\n    "ok": true,\n    "extra_value": "test"\n}',
       'Content-Type': 'application/json'
 
   {
@@ -172,18 +184,30 @@ POST {{<example_uri}}/step4
 {
     "error": "payment required"
 }
+
+# Step 5
+
+HEAD /step5
+< 404
+< Content-Type: text/html
+<<<
+>>>
 """
 
 fsTest2 = """--- Test 2 ---
 
 POST /test-params
-> Accept: text/html
-> Content-Type: application/vnd.katt.test-v{{<version}}+json
+< 200
+< Content-Type: application/vnd.katt.test-v{{<version}}+{{<syntax}}
 {
-    \"ok\": {{<some_var}}
+    "ok": "{{<some_var}}",
+    "boolean": "{{<test_boolean}}",
+    "null": "{{<test_null}}",
+    "integer": "{{<test_integer}}",
+    "float": "{{<test_float}}",
+    "string": "{{<test_string}}",
+    "binary": "{{<test_binary}}"
 }
-< 404
-Not found
 """
 
 fsTest3 = """--- Test 3 ---
@@ -193,6 +217,14 @@ POST /api-mismatch
 > Content-Type: application/json
 {}
 < 200
+< Content-Type: application/json
 { \"ok\": true }
 """
 
+fsTest4 = """--- Test 4 ---
+
+GET /unexpected-disallow
+< 200
+< Content-Type: application/json
+{ "ok": true, "{{_}}": "{{unexpected}}" }
+"""

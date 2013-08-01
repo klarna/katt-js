@@ -25,6 +25,13 @@ describe 'katt', () ->
         hostname: 'example.com'
         some_var: 'hi'
         version: '1'
+        syntax: 'json'
+        test_null: null
+        test_boolean: true
+        test_integer: 1
+        test_float: 1.1
+        test_string: 'string'
+        test_binary: 'binary'
       katt.run {scenario, params}, (err, result) ->
         result.status.should.eql 'pass'
         done()
@@ -35,7 +42,9 @@ describe 'katt', () ->
         result.status.should.eql 'fail'
         errors = result.transactionResults[0].errors
         errors[0].reason.should.eql 'not_equal'
-        errors[0].key.should.eql 'status'
+        errors[0].key.should.eql '/status'
         errors[1].reason.should.eql 'not_equal'
-        errors[1].key.should.eql 'body'
+        errors[1].key.should.eql '/body/ok'
         done()
+
+    it 'should run and fail on unexpected disallow'

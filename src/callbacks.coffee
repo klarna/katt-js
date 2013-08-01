@@ -2,6 +2,7 @@ http = require 'http'
 url = require 'url'
 _ = require 'lodash'
 utils = require './utils'
+Const = require './const'
 {
   validateStatusCode
   validateHeaders
@@ -9,24 +10,30 @@ utils = require './utils'
 } = require './validate'
 
 
-exports.recall = ({syntax, text, params, callbacks}) ->
-  return text  if not _.isString text or _.isEmpty params
-  syntax ?= 'text'
-  return text  unless syntax in ['text', 'json']
-  for key, value of params
-    keyRE = Const.regexEscape key
-    keyRE = "#{Const.TAGS_RE.RECALL_BEGIN}#{keyRE}#{Const.TAGS_RE.RECALL_END}"
-    keyRE = "\"#{keyRE}\""  if syntax is 'json' and not _.isString value
-    keyRE = new RegExp keyRE, 'g'
-    text = text.replace keyRE, value
-  text
-
-
-exports.recall_body = ({headers, body, params, callbacks}) ->
-  syntax = 'text'
-  contentType = headers['content-type']
-  syntax = 'json'  if contentType? and utils.isJsonCT contentType
-  exports.recall {syntax, body, params, callbacks}
+exports.recall = ({scope, input, params, callbacks}) ->
+  return input  if not input? or _.isEmpty params
+  scope ?= 'text'
+  switch scope
+    when 'url'
+      return exports.recall {scope: 'text', input, params, callbacks}
+    when 'headers'
+      _.each input, (value, key) ->
+        input[key] = exports.recall {scope: 'text', input: value, params, callbacks}
+      return input
+    when 'body'
+      scope = 'text'
+      {headers, body} = input
+      contentType = headers['content-type']
+      scope = 'json'  if contentType? and utils.isJsonCT contentType
+      return {headers, body: exports.recall {scope, input: body, params, callbacks}}
+    when 'text', 'json'
+      for key, value of params
+        keyRE = Const.regexEscape key
+        keyRE = "#{Const.TAGS_RE.RECALL_BEGIN}#{keyRE}#{Const.TAGS_RE.RECALL_END}"
+        keyRE = "\"#{keyRE}\""  if scope is 'json' and not _.isString value
+        keyRE = new RegExp keyRE, 'g'
+        input = input.replace keyRE, value
+      return input
 
 
 exports.parse = ({headers, body, params, callbacks}) ->
@@ -71,7 +78,7 @@ exports.request = ({request, params, callbacks}, finalNext) ->
 
 exports.validate = ({actual, expected, params, callbacks}, next) ->
   errors = []
-  validateStatusCode actual.status, expected.status, params, errors
-  validateHeaders actual.headers, expected.headers, params, errors
-  validateBody actual.body, expected.body, params, errors
+  validateStatusCode {actual: actual.status, expected: expected.status, params, errors}
+  validateHeaders {actual: actual.headers, expected: expected.headers, params, errors}
+  validateBody {actual: actual.body, expected: expected.body, params, errors}
   next null, errors

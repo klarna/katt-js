@@ -3,55 +3,6 @@ _ = require 'lodash'
 Const = require './const'
 
 
-# STORE
-exports.store = (actualValue, expectedValue, params = {}) ->
-  return expectedValue  unless _.isString expectedValue
-  return expectedValue  if Const.matchAnyRE.test expectedValue
-  return expectedValue  unless Const.storeRE.test expectedValue
-  expectedValue = expectedValue.replace Const.TAGS.STORE_BEGIN, ''
-  expectedValue = expectedValue.replace Const.TAGS.STORE_END, ''
-  params[expectedValue] = actualValue
-  actualValue
-
-
-exports.storeDeep = (actualValue, expectedValue, params = {}) ->
-  if exports.isObjectOrArray(actualValue) and exports.isObjectOrArray(expectedValue)
-    keys = _.sortBy _.union _.keys(actualValue), _.keys(expectedValue)
-    for key in keys
-      if exports.isObjectOrArray expectedValue[key]
-        exports.storeDeep actualValue[key], expectedValue[key], params
-      else
-        exports.store actualValue[key], expectedValue[key], params
-  else
-    exports.store actualValue, expectedValue, params
-  params
-
-
-# RECALL
-exports.recall = (expectedValue, params = {}) ->
-  return expectedValue  unless _.isString expectedValue
-  for key, value of params
-    keyRE = Const.regexEscape key
-    keyRE = new RegExp "#{Const.TAGS_RE.RECALL_BEGIN}#{keyRE}#{Const.TAGS_RE.RECALL_END}", 'g'
-    expectedValue = expectedValue.replace keyRE, value
-  expectedValue
-
-
-exports.recallDeep = (expectedValue, params = {}) ->
-  if exports.isObjectOrArray expectedValue
-    keys = _.keys expectedValue
-    expectedValue = _.clone expectedValue
-    for key in keys
-      if exports.isObjectOrArray expectedValue[key]
-        expectedValue[key] = exports.recallDeep expectedValue[key], params
-      else
-        expectedValue[key] = exports.recall expectedValue[key], params
-    expectedValue
-  else
-    exports.recall expectedValue, params
-
-
-# MISC
 exports.defaultPort =
   'http:': '80'
   'https:': '443'

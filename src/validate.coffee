@@ -15,7 +15,7 @@ exports.validate = ({key, actual, expected, params, callbacks, errors}) ->
       expected
     }
     return errors
-  expected = utils.store {actual, expected, params, callbacks}
+  expected = exports.store {actual, expected, params, callbacks}
   # expected = callbacks.recall {syntax: 'text', expected, params, callbacks}
   return errors  if actual is expected
   reason = 'not_equal'
@@ -29,7 +29,7 @@ exports.validate = ({key, actual, expected, params, callbacks, errors}) ->
   errors
 
 
-exports.validateDeep = ({key, actual, expected, params, errors}) ->
+exports.validateDeep = ({key, actual, expected, params, callbacks, errors}) ->
   errors ?= []
   if utils.isObjectOrArray(actual) and utils.isObjectOrArray(expected)
     unexpectedValue = expected[Const.TAGS.MATCH_ANY] or Const.TAGS.MATCH_ANY
@@ -80,7 +80,6 @@ exports.validateStatusCode = ({actual, expected, params, callbacks, errors}) ->
 exports.validateUrl = ({actual, expected, params, callbacks, errors}) ->
   errors ?= []
   actual = utils.normalizeUrl actual, params
-  expected = utils.recall expected, params
   expected = utils.normalizeUrl expected, params
   exports.validate {
     key: '/url'
@@ -96,7 +95,6 @@ exports.validateUrl = ({actual, expected, params, callbacks, errors}) ->
 exports.validateHeaders = ({actual, expected, params, callbacks, errors}) ->
   errors ?= []
   actual = utils.normalizeHeaders actual
-  expected = utils.recallDeep expected, params
   expected = utils.normalizeHeaders expected
   for header of expected
     exports.validate {
@@ -124,3 +122,13 @@ exports.validateBody = ({actual, expected, params, callbacks, errors}) ->
     errors
   }
   errors
+
+
+exports.store = ({actual, expected, params}) ->
+  return expected  unless _.isString expected
+  return expected  if Const.matchAnyRE.test expected
+  return expected  unless Const.storeRE.test expected
+  expected = expected.replace Const.TAGS.STORE_BEGIN, ''
+  expected = expected.replace Const.TAGS.STORE_END, ''
+  params[expected] = actual
+  actual
