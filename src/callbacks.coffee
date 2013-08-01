@@ -2,11 +2,38 @@ http = require 'http'
 url = require 'url'
 _ = require 'lodash'
 utils = require './utils'
+Const = require './const'
 {
   validateStatusCode
   validateHeaders
   validateBody
 } = require './validate'
+
+
+exports.recall = ({scope, input, params, callbacks}) ->
+  return input  if not input? or _.isEmpty params
+  scope ?= 'text'
+  switch scope
+    when 'url'
+      return exports.recall {scope: 'text', input, params, callbacks}
+    when 'headers'
+      _.each input, (value, key) ->
+        input[key] = exports.recall {scope: 'text', input: value, params, callbacks}
+      return input
+    when 'body'
+      scope = 'text'
+      {headers, body} = input
+      contentType = headers['content-type']
+      scope = 'json'  if contentType? and utils.isJsonCT contentType
+      return {headers, body: exports.recall {scope, input: body, params, callbacks}}
+    when 'text', 'json'
+      for key, value of params
+        keyRE = Const.regexEscape key
+        keyRE = "#{Const.TAGS_RE.RECALL_BEGIN}#{keyRE}#{Const.TAGS_RE.RECALL_END}"
+        keyRE = "\"#{keyRE}\""  if scope is 'json' and not _.isString value
+        keyRE = new RegExp keyRE, 'g'
+        input = input.replace keyRE, value
+      return input
 
 
 exports.parse = ({headers, body, params, callbacks}) ->
@@ -15,19 +42,17 @@ exports.parse = ({headers, body, params, callbacks}) ->
   body
 
 
-exports.request = ({request, params, callbacks}, next) ->
-  exports.httpRequest {request, params, callbacks}, (err, res) ->
-    return next err  if err
+exports.request = ({request, params, callbacks}, finalNext) ->
+  next = (err, res) ->
+    return finalNext err  if err
     headers = utils.normalizeHeaders res.headers
     res.body = callbacks.parse {headers, body: res.body, params, callbacks}
-    next null, {
+    finalNext null, {
       status: res.statusCode
       headers: res.headers
       body: res.body
     }
 
-
-exports.httpRequest = ({request, params, callbacks}, next) ->
   options = url.parse request.url
   options.method = request.method
   options.headers = request.headers
@@ -53,7 +78,7 @@ exports.httpRequest = ({request, params, callbacks}, next) ->
 
 exports.validate = ({actual, expected, params, callbacks}, next) ->
   errors = []
-  validateStatusCode actual.status, expected.status, params, errors
-  validateHeaders actual.headers, expected.headers, params, errors
-  validateBody actual.body, expected.body, params, errors
+  validateStatusCode {actual: actual.status, expected: expected.status, params, errors}
+  validateHeaders {actual: actual.headers, expected: expected.headers, params, errors}
+  validateBody {actual: actual.body, expected: expected.body, params, errors}
   next null, errors

@@ -33,7 +33,7 @@ defaultCallbacks = require './callbacks'
 # API
 #
 
-exports.makeRequestUrl = (url, params, callbacks) ->
+exports.makeRequestUrl = ({url, params, callbacks}) ->
   return url  if url.indexOf(Const.PROTOCOL_HTTP) is 0
   return url  if url.indexOf(Const.PROTOCOL_HTTPS) is 0
   urlLib.format
@@ -43,23 +43,40 @@ exports.makeRequestUrl = (url, params, callbacks) ->
     pathname: url
 
 
-exports.makeKattRequest = (request, params, callbacks) ->
-  request = utils.recallDeep request, params
-  url = utils.recall request.url, params
-  request.url = exports.makeRequestUrl url, params, callbacks
+exports.makeKattRequest = ({request, params, callbacks}) ->
+  url = request.url
+  url = callbacks.recall {scope: 'url', input: url, params, callbacks}
+  url = exports.makeRequestUrl {url, params, callbacks}
+  headers = request.headers
+  headers = callbacks.recall {scope: 'headers', input: headers, params, callbacks}
+  body = request.body
+  body = callbacks.recall {scope: 'body', input: {headers, body}, params, callbacks}
+  request = _.assign request, {
+    url
+    headers
+    body
+  }
   request
 
 
-exports.makeKattResponse = (response, params, callbacks) ->
-  response = utils.recallDeep response, params
-  headers = utils.normalizeHeaders response.headers
-  response.body = callbacks.parse {
+exports.makeKattResponse = ({response, params, callbacks}) ->
+  headers = response.headers
+  headers = utils.normalizeHeaders headers
+  headers = callbacks.recall {scope: 'headers', input: headers, params, callbacks}
+  body = response.body
+  {body} = callbacks.recall {scope: 'body', input: {headers, body}, params, callbacks}
+  body = callbacks.parse {
     headers
-    body: response.body
+    body
     params
     callbacks
   }
+  response = _.assign response, {
+    headers
+    body
+  }
   response
+
 
 exports.runTransaction = ({scenario, transaction, params, callbacks}, next) ->
   {
@@ -68,8 +85,8 @@ exports.runTransaction = ({scenario, transaction, params, callbacks}, next) ->
     response
   } = transaction
   initialParams = _.cloneDeep params
-  request = exports.makeKattRequest request, params, callbacks
-  expected = exports.makeKattResponse response, params, callbacks
+  request = exports.makeKattRequest {request, params, callbacks}
+  expected = exports.makeKattResponse {response, params, callbacks}
   callbacks.request {request, params, callbacks}, (err, actual) ->
     return next err  if err?
     callbacks.validate {actual, expected, params, callbacks}, (err, errors) ->
