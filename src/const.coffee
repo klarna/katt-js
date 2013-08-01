@@ -15,6 +15,7 @@ exports.regexEscape = (text) ->
 
 exports.TAGS =
   MATCH_ANY: '{{_}}'
+  UNEXPECTED: '{{unexpected}}'
   RECALL_BEGIN: '{{<'
   RECALL_END: '}}'
   STORE_BEGIN: '{{>'
@@ -33,5 +34,9 @@ exports.storeRE = ///
 ///
 
 exports.matchAnyRE = ///
-  #{exports.TAGS_RE.MATCH_ANY}
+  ^#{exports.TAGS_RE.MATCH_ANY}$
+///
+
+exports.unexpectedRE = ///
+  ^#{exports.TAGS_RE.UNEXPECTED}$
 ///

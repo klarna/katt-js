@@ -9,25 +9,43 @@ utils = require './utils'
 } = require './validate'
 
 
+exports.recall = ({syntax, text, params, callbacks}) ->
+  return text  if not _.isString text or _.isEmpty params
+  syntax ?= 'text'
+  return text  unless syntax in ['text', 'json']
+  for key, value of params
+    keyRE = Const.regexEscape key
+    keyRE = "#{Const.TAGS_RE.RECALL_BEGIN}#{keyRE}#{Const.TAGS_RE.RECALL_END}"
+    keyRE = "\"#{keyRE}\""  if syntax is 'json' and not _.isString value
+    keyRE = new RegExp keyRE, 'g'
+    text = text.replace keyRE, value
+  text
+
+
+exports.recall_body = ({headers, body, params, callbacks}) ->
+  syntax = 'text'
+  contentType = headers['content-type']
+  syntax = 'json'  if contentType? and utils.isJsonCT contentType
+  exports.recall {syntax, body, params, callbacks}
+
+
 exports.parse = ({headers, body, params, callbacks}) ->
   contentType = headers['content-type']
   return JSON.parse body  if contentType? and utils.isJsonCT contentType
   body
 
 
-exports.request = ({request, params, callbacks}, next) ->
-  exports.httpRequest {request, params, callbacks}, (err, res) ->
-    return next err  if err
+exports.request = ({request, params, callbacks}, finalNext) ->
+  next = (err, res) ->
+    return finalNext err  if err
     headers = utils.normalizeHeaders res.headers
     res.body = callbacks.parse {headers, body: res.body, params, callbacks}
-    next null, {
+    finalNext null, {
       status: res.statusCode
       headers: res.headers
       body: res.body
     }
 
-
-exports.httpRequest = ({request, params, callbacks}, next) ->
   options = url.parse request.url
   options.method = request.method
   options.headers = request.headers

@@ -33,7 +33,7 @@ defaultCallbacks = require './callbacks'
 # API
 #
 
-exports.makeRequestUrl = (url, params, callbacks) ->
+exports.makeRequestUrl = ({url, params, callbacks}) ->
   return url  if url.indexOf(Const.PROTOCOL_HTTP) is 0
   return url  if url.indexOf(Const.PROTOCOL_HTTPS) is 0
   urlLib.format
@@ -44,18 +44,30 @@ exports.makeRequestUrl = (url, params, callbacks) ->
 
 
 exports.makeKattRequest = (request, params, callbacks) ->
+  url = request.url
+  url = callbacks.recall {text: url, params, callbacks}
+  url = exports.makeRequestUrl {url, params, callbacks}
+  headers = request.headers
+  headers = _.map headers, (name, value) ->
+    callbacks.recall {text: value, params, callbacks}
   request = utils.recallDeep request, params
-  url = utils.recall request.url, params
-  request.url = exports.makeRequestUrl url, params, callbacks
+  request.url = url
+  request.headers = headers
+  request.body = body
   request
 
 
 exports.makeKattResponse = (response, params, callbacks) ->
   response = utils.recallDeep response, params
-  headers = utils.normalizeHeaders response.headers
+  
+  headers = response.headers
+  
+  headers = utils.normalizeHeaders headers
+  body = response.body
+  body = callbacks.recallBody {headers, body, params, callbacks}
   response.body = callbacks.parse {
     headers
-    body: response.body
+    body
     params
     callbacks
   }
