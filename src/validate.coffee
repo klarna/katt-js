@@ -77,6 +77,21 @@ exports.validateStatusCode = ({actual, expected, params, callbacks, errors}) ->
   errors
 
 
+exports.validateMethod = ({actual, expected, params, callbacks, errors}) ->
+  errors ?= []
+  actual = actual.toUpperCase()
+  expected = expected.toUpperCase()
+  exports.validate {
+    key: '/method'
+    actual
+    expected
+    params
+    callbacks
+    errors
+  }
+  errors
+
+
 exports.validateUrl = ({actual, expected, params, callbacks, errors}) ->
   errors ?= []
   actual = utils.normalizeUrl actual, params
