@@ -20,13 +20,14 @@ _ = require 'lodash'
 blueprintParser = require 'katt-blueprint-parser'
 utils = exports.utils = require './utils'
 Const = exports.Const = require './const'
+defaultCallbacks = exports.callbacks = require './callbacks'
+exports.validate = require './validate'
 defaultParams =
   protocol: Const.DEFAULT_PROTOCOL
   hostname: Const.DEFAULT_HOSTNAME
   port: Const.DEFAULT_PORT
   scenarioTimeout: Const.DEFAULT_SCENARIO_TIMEOUT
   requestTimeout: Const.DEFAULT_REQUEST_TIMEOUT
-defaultCallbacks = require './callbacks'
 
 
 #
