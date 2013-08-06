@@ -70,9 +70,8 @@ exports.request = ({request, params, callbacks}, finalNext) ->
     res.on 'error', next
   req.on 'socket', (socket) ->
     socket.setTimeout params.requestTimeout, req.abort
-  req.on 'data', () ->
-    req.write request.body, 'utf8'  if request.body?
   req.on 'error', next
+  req.write request.body, 'utf8'  if request.body?
   req.end()
 
 
