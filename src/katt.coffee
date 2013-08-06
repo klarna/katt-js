@@ -51,7 +51,7 @@ exports.makeKattRequest = ({request, params, callbacks}) ->
   headers = request.headers
   headers = callbacks.recall {scope: 'headers', input: headers, params, callbacks}
   body = request.body
-  body = callbacks.recall {scope: 'body', input: {headers, body}, params, callbacks}
+  {body} = callbacks.recall {scope: 'body', input: {headers, body}, params, callbacks}
   request = _.assign request, {
     url
     headers
