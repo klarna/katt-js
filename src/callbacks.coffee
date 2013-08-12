@@ -30,7 +30,7 @@ exports.recall = ({scope, input, params, callbacks}) ->
       for key, value of params
         keyRE = Const.regexEscape key
         keyRE = "#{Const.TAGS_RE.RECALL_BEGIN}#{keyRE}#{Const.TAGS_RE.RECALL_END}"
-        keyRE = "\"#{keyRE}\""  if scope is 'json' and not _.isString value
+        keyRE = "\"?#{keyRE}\"?"  if scope is 'json' and not _.isString value
         keyRE = new RegExp keyRE, 'g'
         input = input.replace keyRE, value
       return input
