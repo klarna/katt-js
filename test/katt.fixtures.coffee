@@ -33,8 +33,14 @@ exports.run.before = () ->
   nock('http://127.0.0.1')
     .get('/step2')
     .matchHeader('Accept', 'application/json')
-    .reply 200, '{\n    "required_fields": [\n        "email"\n    ],\n    "cart": "{{_}}"\n}',
-      'Content-Type': 'application/json'
+    .reply 200, JSON.stringify({
+      required_fields: ['email'],
+      cart: '{{_}}',
+      extra_object: {
+        key: 'test'
+      },
+      extra_array: ['test']
+    }, null, 4), 'Content-Type': 'application/json'
 
   # Mock response for Step 3
   nock('http://127.0.0.1')
@@ -58,7 +64,11 @@ exports.run.before = () ->
   nock('http://example.com')
     .post('/test-params')
     .reply 200, JSON.stringify({
-      ok: 'hi'
+      protocol: 'http:',
+      hostname: 'example.com',
+      port: 80,
+      some_var: 'hi',
+      some_var3: 'hihihi',
       'null': null
       boolean: true
       integer: 1
@@ -78,8 +88,12 @@ exports.run.before = () ->
   # Mock response for unexpected disallow test
   nock('http://127.0.0.1')
     .get('/unexpected-disallow')
-    .reply 401, '{\n    "ok": true,\n    "extra_value": "test"\n}',
-      'Content-Type': 'application/json'
+    .reply 401, JSON.stringify({
+      extra_object: {
+        key: 'test'
+      },
+      extra_array: ['test']
+    }, null, 4), 'Content-Type': 'application/json'
 
   {
     katt
@@ -200,7 +214,11 @@ POST /test-params
 < 200
 < Content-Type: application/vnd.katt.test-v{{<version}}+{{<syntax}}
 {
-    "ok": "{{<some_var}}",
+    "protocol": "{{<protocol}}",
+    "hostname": "{{<hostname}}",
+    "port": "{{<port}}",
+    "some_var": "{{<some_var}}",
+    "some_var3": "hi{{<some_var}}hi",
     "boolean": "{{<test_boolean}}",
     "null": "{{<test_null}}",
     "integer": "{{<test_integer}}",
@@ -218,7 +236,7 @@ POST /api-mismatch
 {}
 < 200
 < Content-Type: application/json
-{ \"ok\": true }
+{ "ok": true }
 """
 
 fsTest4 = """--- Test 4 ---
@@ -226,5 +244,11 @@ fsTest4 = """--- Test 4 ---
 GET /unexpected-disallow
 < 200
 < Content-Type: application/json
-{ "ok": true, "{{_}}": "{{unexpected}}" }
+{
+    "ok": true,
+    "extra_object": {
+        "{{_}}": "{{unexpected}}"
+    },
+    "extra_array": ["{{unexpected}}"]
+}
 """
