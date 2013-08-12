@@ -25,7 +25,7 @@ exports.validate = require './validate'
 defaultParams =
   protocol: Const.DEFAULT_PROTOCOL
   hostname: Const.DEFAULT_HOSTNAME
-  port: Const.DEFAULT_PORT
+  port: Const.DEFAULT_PORT_HTTP
   scenarioTimeout: Const.DEFAULT_SCENARIO_TIMEOUT
   requestTimeout: Const.DEFAULT_REQUEST_TIMEOUT
 
