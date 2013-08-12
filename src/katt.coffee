@@ -95,6 +95,7 @@ exports.runTransaction = ({scenario, transaction, params, callbacks}, next) ->
       next null, {
         description
         request
+        response: actual
         params: initialParams
         errors
       }
