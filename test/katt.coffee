@@ -57,10 +57,10 @@ describe 'katt', () ->
       katt.run {scenario}, (err, result) ->
         result.status.should.eql 'fail'
         errors = result.transactionResults[0].errors
-        errors[0].reason.should.eql 'not_equal'
         errors[0].key.should.eql '/status'
-        errors[1].reason.should.eql 'not_equal'
+        errors[0].reason.should.eql 'not_equal'
         errors[1].key.should.eql '/body/ok'
+        errors[1].reason.should.eql 'not_equal'
         done()
 
     it 'should run and fail on unexpected disallow'
