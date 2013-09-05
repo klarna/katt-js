@@ -37,11 +37,12 @@ defaultParams =
 exports.makeRequestUrl = ({url, params, callbacks}) ->
   return url  if url.indexOf(Const.PROTOCOL_HTTP) is 0
   return url  if url.indexOf(Const.PROTOCOL_HTTPS) is 0
-  urlLib.format
-    protocol: params.protocol
-    hostname: params.hostname
-    port: params.port
-    pathname: url
+  {protocol, hostname, port} = params
+  portIsNotNeeded = protocol is Const.PROTOCOL_HTTP and port is Const.DEFAULT_PORT_HTTP
+  portIsNotNeeded = portIsNotNeeded or (protocol is Const.PROTOCOL_HTTPS and port is Const.DEFAULT_PORT_HTTPS)
+  port = undefined  if portIsNotNeeded
+  urlObj = _.merge urlLib.parse(url), {protocol, hostname, port}
+  urlLib.format urlObj
 
 
 exports.makeKattRequest = ({request, params, callbacks}) ->
