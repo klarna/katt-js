@@ -1,4 +1,4 @@
-# KATT(js)
+# KATT(js) [![Build Status][2]][1]
 
 KATT (Klarna API Testing Tool) is an HTTP-based testing tool for Node.
 
@@ -78,3 +78,7 @@ fulfilled before making your pull-request:
 ## License
 
 [Apache 2.0](LICENSE)
+
+
+  [1]: https://travis-ci.org/klarna/katt-js
+  [2]: https://travis-ci.org/klarna/katt-js.png
