@@ -20,13 +20,18 @@
       "url": "http://www.apache.org/licenses/LICENSE-2.0"
     }
   ],
+  "bin": {
+    "katt-js": "bin/cli.coffee"
+  },
   "scripts": {
     "prepublish": "make prepublish",
     "test": "make test"
   },
   "dependencies": {
     "katt-blueprint-parser": "~1.1.2",
-    "lodash": "~1.3.1"
+    "lodash": "~1.3.1",
+    "argparse": "~0.1.15",
+    "tape": "~2.12.3"
   },
   "optionalDependencies": {
     "coffee-script": "~1.6.3",
@@ -42,6 +47,9 @@
     "testem": "~0.3.18"
   },
   "publishConfig": {
+    "bin": {
+      "katt-js": "bin/cli.js"
+    },
     "optionalDependencies": {}
   }
 }
