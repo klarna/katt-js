@@ -73,3 +73,9 @@ describe 'katt', () ->
         errors[0].key.should.eql '/body/expected'
         errors[0].reason.should.eql 'not_equal'
         done()
+
+    it 'should run a scenario with unexpected-and-undefined', (done) ->
+      scenario = '/mock/unexpected-and-undefined.apib'
+      katt.run {scenario}, (err, result) ->
+        result.status.should.eql 'pass'
+        done()
