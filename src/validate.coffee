@@ -38,6 +38,7 @@ exports.validate = ({key, actual, expected, params, callbacks, errors}) ->
     reason = 'not_equal'
     reason = 'unexpected'  if Const.unexpectedRE.test expected
   else
+    return errors  if Const.unexpectedRE.test expected
     reason = 'not_equal'
   errors.push {
     reason
