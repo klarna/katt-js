@@ -33,7 +33,7 @@ exports.validate = ({key, actual, expected, params, callbacks, errors}) ->
     return errors
   expected = exports.store {actual, expected, params, callbacks}
   # expected = callbacks.recall {syntax: 'text', expected, params, callbacks}
-  if actual?
+  if actual isnt undefined
     return errors  if actual is expected
     reason = 'not_equal'
     reason = 'unexpected'  if Const.unexpectedRE.test expected
