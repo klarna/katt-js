@@ -30,6 +30,7 @@ exports.run.before = () ->
     return fsTest2  if filename is '/mock/test-params.apib'
     return fsTest3  if filename is '/mock/api-mismatch.apib'
     return fsTest4  if filename is '/mock/unexpected-disallow.apib'
+    return fsTest5  if filename is '/mock/expected-but-undefined.apib'
     fs.readFileSync.apply fs, arguments
   mockery.registerMock 'fs', fsMock
   mockery.enable
@@ -110,6 +111,11 @@ exports.run.before = () ->
       },
       extra_array: ['test']
     }, null, 4), 'Content-Type': 'application/json'
+
+  # Mock response for unexpected disallow test
+  nock('http://127.0.0.1')
+    .get('/expected-but-undefined')
+    .reply 200, JSON.stringify({}, null, 4), 'Content-Type': 'application/json'
 
   {
     katt
@@ -266,5 +272,15 @@ GET /unexpected-disallow
         "{{_}}": "{{unexpected}}"
     },
     "extra_array": ["{{unexpected}}"]
+}
+"""
+
+fsTest5 = """--- Test 5 ---
+
+GET /expected-but-undefined
+< 200
+< Content-Type: application/json
+{
+    "expected": "{{>defined_value}}"
 }
 """
