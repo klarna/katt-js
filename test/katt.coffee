@@ -64,3 +64,18 @@ describe 'katt', () ->
         done()
 
     it 'should run and fail on unexpected disallow'
+
+    it 'should run and fail on expected-but-undefined', (done) ->
+      scenario = '/mock/expected-but-undefined.apib'
+      katt.run {scenario}, (err, result) ->
+        result.status.should.eql 'fail'
+        errors = result.transactionResults[0].errors
+        errors[0].key.should.eql '/body/expected'
+        errors[0].reason.should.eql 'not_equal'
+        done()
+
+    it 'should run a scenario with unexpected-and-undefined', (done) ->
+      scenario = '/mock/unexpected-and-undefined.apib'
+      katt.run {scenario}, (err, result) ->
+        result.status.should.eql 'pass'
+        done()
