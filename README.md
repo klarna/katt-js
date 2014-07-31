@@ -64,6 +64,13 @@ katt.run {scenario, params}, (err, result ) ->
     * `validate` to be called async with `actual`, `expected`, `params`, `callbacks`
 
 
+## CLI
+
+```shell
+katt-js -p '{"hostname":"httpbin.org","your_name":"Klarna","my_name":"KATT","whoarewe":"Klarna_and_KATT"}' doc/example-httpbin.apib
+```
+
+
 ## Contributing
 
 A pull-request is most welcome. Please make sure that the following criteria are
