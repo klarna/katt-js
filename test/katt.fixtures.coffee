@@ -63,14 +63,21 @@ exports.run.before = () ->
   # Mock response for Step 3
   nock('http://127.0.0.1')
     .post('/step2/step3')
-    .reply 200, '{\n    "required_fields": [\n        "password"\n    ],\n    "cart": {"item1": true}\n}',
-      'Content-Type': 'application/json'
+    .reply 200, JSON.stringify({
+      required_fields: [
+        "password"
+      ],
+      cart: {
+        item1: true
+      }
+    }, null, 4), 'Content-Type': 'application/json'
 
   # Mock response for Step 4
   nock('http://127.0.0.1')
     .post('/step2/step4')
-    .reply 402, '{\n    "error": "payment required"\n}',
-      'Content-Type': 'application/json'
+    .reply 402, JSON.stringify({
+      error: "payment required"
+    }, null, 4), 'Content-Type': 'application/json'
 
   # Mock response for Step 5
   nock('http://127.0.0.1')
@@ -100,8 +107,9 @@ exports.run.before = () ->
     .post('/api-mismatch')
     .matchHeader('Accept', 'application/json')
     .matchHeader('Content-Type', 'application/json')
-    .reply 401, '{\n    "error": "unauthorized"\n}',
-      'Content-Type': 'application/json'
+    .reply 401, JSON.stringify({
+      error: "unauthorized"
+    }, null, 4), 'Content-Type': 'application/json'
 
   # Mock response for unexpected disallow test
   nock('http://127.0.0.1')

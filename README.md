@@ -36,7 +36,7 @@ are expected beyond the ones defined.
 ## Examples
 
 ```coffeescript
-katt = require 'katt'
+katt = require 'katt-js'
 scenario = './doc/example-httpbin.apib'
 params =
   hostname: 'httpbin.org'

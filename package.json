@@ -34,17 +34,15 @@
     "tape": "~2.12.3"
   },
   "optionalDependencies": {
-    "coffee-script": "~1.6.3",
-    "pegjs": "git://github.com/dmajda/pegjs.git#798ed6a8a4fbfc36b312ba09d428a5832808d9d6"
+    "coffee-script": "~1.7.1"
   },
   "devDependencies": {
-    "chai": "~1.7.2",
-    "coffeelint": "~0.5.6",
-    "growl": "~1.7.0",
-    "mocha": "~1.12.0",
+    "chai": "~1.9.1",
+    "coffeelint": "~1.5.1",
+    "mocha": "~1.20.1",
     "mockery": "~1.4.0",
-    "nock": "~0.18.2",
-    "testem": "~0.3.18"
+    "nock": "~0.34.0",
+    "testem": "~0.6.16"
   },
   "publishConfig": {
     "bin": {
