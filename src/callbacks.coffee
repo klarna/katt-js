@@ -15,6 +15,7 @@
 ###
 
 http = require 'http'
+https = require 'https'
 url = require 'url'
 _ = require 'lodash'
 utils = require './utils'
@@ -72,8 +73,15 @@ exports.request = ({request, params, callbacks}, finalNext) ->
   options = url.parse request.url
   options.method = request.method
   options.headers = request.headers
+  switch options.protocol
+    when 'http:'
+      protocol = http
+    when 'https:'
+      protocol = https
+    else
+      throw new Error "Unknown protocol #{options.protocol}"
 
-  req = http.request options, (res) ->
+  req = protocol.request options, (res) ->
     res.setEncoding 'utf8'
     res.body = ''
     res.on 'data', (chunk) ->

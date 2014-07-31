@@ -135,6 +135,7 @@ exports.readScenario = (scenario) ->
 exports.run = ({scenario, params, callbacks}, next) ->
   params ?= {}
   callbacks ?= {}
+  params.port ?= Const.DEFAULT_PORT_HTTPS  if params.protocol is Const.PROTOCOL_HTTPS
   params = _.defaults params, defaultParams
   callbacks = _.defaults callbacks, defaultCallbacks
   blueprint = exports.readScenario scenario

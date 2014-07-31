@@ -1,4 +1,4 @@
-# KATT(js)
+# KATT(js) [![Build Status][2]][1]
 
 KATT (Klarna API Testing Tool) is an HTTP-based testing tool for Node.
 
@@ -10,39 +10,33 @@ Any relevant difference between expected and actual responses will cause a
 failure.
 
 The validator makes use of a few tags with special meaning:
-<dl>
-  <dt>"{{_}}"</dt>
-  <dd>
-    Match anything (i.e. no real validation, only check existence).
-  </dd>
-  <dt>"{{unexpected}}"</dt>
-  <dd>
-    Match nothing (i.e. no real validation, only check lack of existence)
-  </dd>
-  <dt>
-    "{{&gt;key}}"</dt>
-  <dd>
-    Store value of the whole string (key must be unique within testcase)
-  </dd>
-  <dt>"{{&lt;key}}"</dt>
-  <dd>
-    Recall stored value.
-  </dd>
-</dl>
+
+`"{{_}}"`  
+Match anything (i.e. no real validation, only check existence).
+
+`"{{unexpected}}"`  
+Match nothing (i.e. no real validation, only check lack of existence)
+
+`"{{>key}}"`  
+Store value of the whole string (key must be unique within testcase)
+
+`"{{<key}}"`  
+Recall stored value.
 
 The "{{_}}" tag can also be used as a JSON object's property in order to
 validate any other additional properties.
 
-By default, the builtin validator will allow additional fields in an object
-structure. To counteract that default, one can add `"{{_}}": "{{unexpected}}"`
-inside the object, effectively making a rule no other properties beyond the
-ones defined are expected.
+By default, the builtin validator will allow additional properties in an object
+structure, or additional items in an array structure. To counteract that
+default, one can do `{..., "{{_}}": "{{unexpected}}"}` or
+`[..., "{{unexpected}}"]`, effectively making a rule that no properties/items
+are expected beyond the ones defined.
 
 
 ## Examples
 
 ```coffeescript
-katt = require 'katt'
+katt = require 'katt-js'
 scenario = './doc/example-httpbin.apib'
 params =
   hostname: 'httpbin.org'
@@ -70,6 +64,13 @@ katt.run {scenario, params}, (err, result ) ->
     * `validate` to be called async with `actual`, `expected`, `params`, `callbacks`
 
 
+## CLI
+
+```shell
+katt-js -p '{"hostname":"httpbin.org","your_name":"Klarna","my_name":"KATT","whoarewe":"Klarna_and_KATT"}' doc/example-httpbin.apib
+```
+
+
 ## Contributing
 
 A pull-request is most welcome. Please make sure that the following criteria are
@@ -84,3 +85,7 @@ fulfilled before making your pull-request:
 ## License
 
 [Apache 2.0](LICENSE)
+
+
+  [1]: https://travis-ci.org/klarna/katt-js
+  [2]: https://travis-ci.org/klarna/katt-js.png

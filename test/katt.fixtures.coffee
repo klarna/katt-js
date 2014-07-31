@@ -30,6 +30,8 @@ exports.run.before = () ->
     return fsTest2  if filename is '/mock/test-params.apib'
     return fsTest3  if filename is '/mock/api-mismatch.apib'
     return fsTest4  if filename is '/mock/unexpected-disallow.apib'
+    return fsTest5  if filename is '/mock/expected-but-undefined.apib'
+    return fsTest6  if filename is '/mock/unexpected-and-undefined.apib'
     fs.readFileSync.apply fs, arguments
   mockery.registerMock 'fs', fsMock
   mockery.enable
@@ -61,14 +63,21 @@ exports.run.before = () ->
   # Mock response for Step 3
   nock('http://127.0.0.1')
     .post('/step2/step3')
-    .reply 200, '{\n    "required_fields": [\n        "password"\n    ],\n    "cart": {"item1": true}\n}',
-      'Content-Type': 'application/json'
+    .reply 200, JSON.stringify({
+      required_fields: [
+        "password"
+      ],
+      cart: {
+        item1: true
+      }
+    }, null, 4), 'Content-Type': 'application/json'
 
   # Mock response for Step 4
   nock('http://127.0.0.1')
     .post('/step2/step4')
-    .reply 402, '{\n    "error": "payment required"\n}',
-      'Content-Type': 'application/json'
+    .reply 402, JSON.stringify({
+      error: "payment required"
+    }, null, 4), 'Content-Type': 'application/json'
 
   # Mock response for Step 5
   nock('http://127.0.0.1')
@@ -98,8 +107,9 @@ exports.run.before = () ->
     .post('/api-mismatch')
     .matchHeader('Accept', 'application/json')
     .matchHeader('Content-Type', 'application/json')
-    .reply 401, '{\n    "error": "unauthorized"\n}',
-      'Content-Type': 'application/json'
+    .reply 401, JSON.stringify({
+      error: "unauthorized"
+    }, null, 4), 'Content-Type': 'application/json'
 
   # Mock response for unexpected disallow test
   nock('http://127.0.0.1')
@@ -110,6 +120,16 @@ exports.run.before = () ->
       },
       extra_array: ['test']
     }, null, 4), 'Content-Type': 'application/json'
+
+  # Mock response for unexpected disallow test
+  nock('http://127.0.0.1')
+    .get('/expected-but-undefined')
+    .reply 200, JSON.stringify({}, null, 4), 'Content-Type': 'application/json'
+
+  # Mock response for unexpected disallow test
+  nock('http://127.0.0.1')
+    .get('/unexpected-and-undefined')
+    .reply 200, JSON.stringify({}, null, 4), 'Content-Type': 'application/json'
 
   {
     katt
@@ -266,5 +286,25 @@ GET /unexpected-disallow
         "{{_}}": "{{unexpected}}"
     },
     "extra_array": ["{{unexpected}}"]
+}
+"""
+
+fsTest5 = """--- Test 5 ---
+
+GET /expected-but-undefined
+< 200
+< Content-Type: application/json
+{
+    "expected": "{{>defined_value}}"
+}
+"""
+
+fsTest6 = """--- Test 6 ---
+
+GET /unexpected-and-undefined
+< 200
+< Content-Type: application/json
+{
+    "expected": "{{unexpected}}"
 }
 """
